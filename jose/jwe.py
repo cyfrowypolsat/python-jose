@@ -18,7 +18,7 @@ from . import jwk
 
 
 def encrypt(plaintext, key, encryption=ALGORITHMS.A256GCM,
-            algorithm=ALGORITHMS.DIR, zip=None, cty=None, kid=None):
+            algorithm=ALGORITHMS.DIR, zip=None, cty=None, kid=None, headers=None):
     """Encrypts plaintext and returns a JWE cmpact serialization string.
 
     Args:
@@ -55,7 +55,7 @@ def encrypt(plaintext, key, encryption=ALGORITHMS.A256GCM,
     if encryption not in ALGORITHMS.SUPPORTED:
         raise JWEError('Algorithm %s not supported.' % encryption)
     key = jwk.construct(key, algorithm)
-    encoded_header = _encoded_header(algorithm, encryption, zip, cty, kid)
+    encoded_header = _encoded_header(algorithm, encryption, zip, cty, kid, headers)
 
     plaintext = _compress(zip, plaintext)
     enc_cek, iv, cipher_text, auth_tag = _encrypt_and_auth(
@@ -335,7 +335,7 @@ def _jwe_compact_deserialize(jwe_bytes):
     return header, header_segment, encrypted_key, iv, ciphertext, auth_tag
 
 
-def _encoded_header(alg, enc, zip, cty, kid):
+def _encoded_header(alg, enc, zip, cty, kid, headers):
     """
     Generate an appropriate JOSE header based on the values provided
     Args:
@@ -355,6 +355,8 @@ def _encoded_header(alg, enc, zip, cty, kid):
         header["cty"] = cty
     if kid:
         header["kid"] = kid
+    if headers:
+        header.update(headers)
     json_header = json.dumps(
         header,
         separators=(',', ':'),
